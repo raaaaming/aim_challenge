@@ -34,7 +34,7 @@ class Settings:
         or os.getenv("OPENROUTER_API_KEY", "").strip()
     )
     LLM_MODEL: str = os.getenv("LLM_MODEL", "").strip()
-    LLM_TIMEOUT: float = float(os.getenv("LLM_TIMEOUT", "45"))
+    LLM_TIMEOUT: float = float(os.getenv("LLM_TIMEOUT", "90"))
 
     # ---- 서버 ----------------------------------------------------------
     CORS_ORIGINS: list = [
@@ -59,10 +59,10 @@ class Settings:
         if self.LLM_MODEL:
             return self.LLM_MODEL
         return {
-            "gemini": "gemini-2.5-flash",
+            "gemini": "gemini-3.6-flash",
             "groq": "llama-3.3-70b-versatile",
             "openrouter": "meta-llama/llama-3.3-70b-instruct:free",
-        }.get(self.LLM_PROVIDER, "gemini-2.5-flash")
+        }.get(self.LLM_PROVIDER, "gemini-3.6-flash")
 
 
 settings = Settings()
