@@ -34,7 +34,7 @@ class Settings:
         or os.getenv("OPENROUTER_API_KEY", "").strip()
     )
     LLM_MODEL: str = os.getenv("LLM_MODEL", "").strip()
-    LLM_TIMEOUT: float = float(os.getenv("LLM_TIMEOUT", "25"))
+    LLM_TIMEOUT: float = float(os.getenv("LLM_TIMEOUT", "45"))
 
     # ---- 서버 ----------------------------------------------------------
     CORS_ORIGINS: list = [

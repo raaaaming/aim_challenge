@@ -83,7 +83,11 @@ async def _call_gemini(system: str, messages: List[Dict[str, str]], json_mode: b
     body: Dict[str, Any] = {
         "contents": contents,
         "systemInstruction": {"parts": [{"text": system}]},
-        "generationConfig": {"temperature": temperature, "maxOutputTokens": 1400},
+        "generationConfig": {
+            "temperature": temperature,
+            "maxOutputTokens": 1400,
+            "thinkingConfig": {"thinkingBudget": 0},  # 문안 재작성엔 추론 불필요 → 지연/타임아웃 방지
+        },
     }
     if json_mode:
         body["generationConfig"]["responseMimeType"] = "application/json"
