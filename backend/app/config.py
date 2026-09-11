@@ -59,10 +59,10 @@ class Settings:
         if self.LLM_MODEL:
             return self.LLM_MODEL
         return {
-            "gemini": "gemini-2.0-flash",
+            "gemini": "gemini-3.6-flash",
             "groq": "llama-3.3-70b-versatile",
             "openrouter": "meta-llama/llama-3.3-70b-instruct:free",
-        }.get(self.LLM_PROVIDER, "gemini-2.0-flash")
+        }.get(self.LLM_PROVIDER, "gemini-3.6-flash")
 
 
 settings = Settings()
