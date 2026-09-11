@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from . import chat_engine, describe, llm, recommender, repository as repo
+from . import describe, llm, recommender, repository as repo, tournament
 from . import supabase as sb
 from .config import settings
 
@@ -28,9 +28,11 @@ app.add_middleware(
 
 
 # ---------------------------------------------------------------------------
-class ChatIn(BaseModel):
+class MatchChoice(BaseModel):
     session_id: str
-    message: str = Field(min_length=1, max_length=1000)
+    winner_id: str
+    loser_id: str
+    elapsed_ms: Optional[float] = None
 
 
 # ---------------------------------------------------------------------------
@@ -88,33 +90,38 @@ def get_place(place_id: str):
 
 
 # ---------------------------------------------------------------------------
-@app.post("/api/chat/start")
-def chat_start():
-    s, msgs = chat_engine.start_session()
-    return {
-        "session_id": s.id,
-        "messages": msgs,
-        "progress": s.progress(),
-        "finished": False,
-        "engine": "llm" if llm.enabled() else "rule",
-    }
+@app.post("/api/match/start")
+def match_start():
+    m = tournament.start_session()
+    return m.start()
 
 
-@app.post("/api/chat")
-async def chat(body: ChatIn):
-    s = chat_engine.get_session(body.session_id)
-    if s is None:
+@app.get("/api/match/{session_id}")
+def match_state(session_id: str):
+    m = tournament.get_session(session_id)
+    if m is None:
+        raise HTTPException(404, "세션이 만료되었습니다")
+    return m.current()
+
+
+@app.post("/api/match/choose")
+def match_choose(body: MatchChoice):
+    m = tournament.get_session(body.session_id)
+    if m is None:
         raise HTTPException(404, "세션이 만료되었습니다. 새로고침해 주세요.")
-    return await chat_engine.process(s, body.message.strip())
+    try:
+        return m.choose(body.winner_id, body.loser_id, body.elapsed_ms)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
 
 # ---------------------------------------------------------------------------
 @app.get("/api/result/{session_id}")
 async def result(session_id: str):
-    s = chat_engine.get_session(session_id)
-    if s is None or not s.result:
+    m = tournament.get_session(session_id)
+    if m is None or not m.result:
         raise HTTPException(404, "아직 추천 결과가 없습니다")
-    return await _build_result(s.result, s.slots)
+    return await _build_result(m.result, m.result.get("slots", {}))
 
 
 @app.get("/api/result/preview/{place_id}")

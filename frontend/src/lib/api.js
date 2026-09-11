@@ -10,9 +10,13 @@ async function req(path, opts) {
 }
 
 export const api = {
-  startChat: () => req('/api/chat/start', { method: 'POST' }),
-  sendChat: (session_id, message) =>
-    req('/api/chat', { method: 'POST', body: JSON.stringify({ session_id, message }) }),
+  startMatch: () => req('/api/match/start', { method: 'POST' }),
+  matchState: (session_id) => req(`/api/match/${session_id}`),
+  choose: (session_id, winner_id, loser_id, elapsed_ms) =>
+    req('/api/match/choose', {
+      method: 'POST',
+      body: JSON.stringify({ session_id, winner_id, loser_id, elapsed_ms }),
+    }),
   result: (session_id) => req(`/api/result/${session_id}`),
   health: () => req('/api/health'),
 }

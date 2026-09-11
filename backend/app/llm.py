@@ -5,7 +5,7 @@
   gemini     — Google AI Studio 무료 등급 (gemini-2.0-flash). 키 발급 무료.
   groq       — Groq Cloud 무료 등급 (llama-3.3-70b-versatile).
   openrouter — OpenRouter 의 ':free' 접미사 모델 (과금 없음).
-  rule       — 키가 아예 없을 때 쓰는 내장 규칙 엔진 (chat_engine 이 처리).
+  rule       — 키가 아예 없을 때. 설명은 describe.py 가 템플릿으로 조립한다.
 
 모두 OpenAI 호환 or REST 라 httpx 만으로 호출한다.
 """

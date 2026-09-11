@@ -20,21 +20,24 @@ function ImageBlock({ src, name }) {
   )
 }
 
-function ScoreBar({ axis, value }) {
+function ScoreBar({ axis, value, note }) {
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between gap-2">
         <span className="truncate text-[11px] font-medium text-sea-200">{axis.label}</span>
-        <span className="shrink-0 text-[11px] font-bold tabular-nums text-white">{value.toFixed(1)}</span>
+        <span className="shrink-0 text-[11px] font-bold tabular-nums text-white">
+          {value == null ? '—' : value.toFixed(1)}
+        </span>
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
         <div className="h-full rounded-full bg-gradient-to-r from-sea-400 to-sea-200"
-             style={{ width: `${(value / 10) * 100}%` }} />
+             style={{ width: `${((value ?? 0) / 10) * 100}%` }} />
       </div>
       <div className="mt-1 flex justify-between text-[9px] text-sea-400">
         <span className="truncate">{axis.low?.split(' (')[0]}</span>
         <span className="truncate text-right">{axis.high?.split(' (')[0]}</span>
       </div>
+      {note && <p className="mt-1 truncate text-[9px] text-sea-500">{note}</p>}
     </div>
   )
 }
@@ -61,7 +64,6 @@ export default function ResultScreen({ sessionId, onRestart }) {
   }
 
   const d = data.description
-  const axmap = Object.fromEntries((data.axes ?? []).map((a) => [a.key, a]))
 
   return (
     <div className="scroll-thin h-full overflow-y-auto bg-sea-950 pb-10">
@@ -130,6 +132,21 @@ export default function ResultScreen({ sessionId, onRestart }) {
           </div>
         </div>
       )}
+
+      {/* 내 응답 10축 점수 */}
+      <div className="mt-8 px-5">
+        <h2 className="mb-3 text-[13px] font-bold text-white">내 응답의 취향 점수</h2>
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+          {(data.axes ?? []).map((a) => {
+            const slot = data.user_slots?.[a.key]
+            return (
+              <ScoreBar key={a.key} axis={a}
+                        value={slot ? Number(slot.value) : null}
+                        note={slot?.evidence} />
+            )
+          })}
+        </div>
+      </div>
 
       {/* 10축 점수 */}
       <div className="mt-8 px-5">

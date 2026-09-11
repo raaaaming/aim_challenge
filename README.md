@@ -29,12 +29,11 @@ LLM과 대화하며 취향을 파악하고, `여행지_20_포항.csv` 의 20곳 
 │   └── seed.py              시딩 + 이미지 업로드 스크립트
 ├── backend/
 │   ├── app/supabase.py      ← Supabase 연동 지점 (요구사항)
-│   ├── app/chat_engine.py   P0 우선 질문 · 되묻기 · 최종 임베드
-│   ├── app/recommender.py   가중 거리 기반 추천
+│   ├── app/tournament.py    2택 월드컵(Elo·반응시간) 추천 엔진 (self-check: python -m app.tournament)
+│   ├── app/recommender.py   취향 벡터 → 가중 거리 fit_score
 │   ├── app/describe.py      결과 설명 재생성 (CSV 7개 필드만 사용)
-│   ├── app/llm.py           무료 LLM 어댑터
-│   └── test_flow.py         대화 흐름 스모크 테스트
-└── frontend/src/screens/    SplashScreen · ChatScreen · ResultScreen
+│   └── app/llm.py           무료 LLM 어댑터
+└── frontend/src/screens/    SplashScreen · MatchScreen · ResultScreen
 ```
 
 ## 실행
@@ -108,14 +107,16 @@ fit_score = (1 − distance/10) × 100
 
 ## 화면 흐름
 
-1. **첫 시작 화면** — 중앙보다 약간 위(-8vh)에 **포항항** 로고, 1.6초 가짜 로딩(물결 애니메이션) 후 **바로 채팅 화면**으로 전환
-2. **채팅 화면** — P0 지표를 먼저 질문. 답이 모호하면 같은 지표를 **더 구체적인 양자택일로 되물음**. 상단에 취향 파악 진행률 표시
-3. 모든 지표가 정리되면 `그렇다면 당신에게 추천하는 여행지는?` 메시지 + **임베드 카드**
-4. **임베드 터치/클릭** → **최종 결과 화면**
+1. **첫 시작 화면** — 중앙보다 약간 위(-8vh)에 **포항항** 로고, 1.6초 가짜 로딩(물결 애니메이션) 후 **바로 월드컵 화면**으로 전환
+2. **2택 월드컵 화면** — 두 여행지 카드(무엇을 할 수 있는지·누구에게 맞는지) 중 **더 끌리는 곳**을 탭. 총 12라운드, 상단에 진행률 표시
+   - 빠르게 고를수록(= 더 끌릴수록) 그 선택의 가중치(Elo K)가 커짐
+   - 12라운드 뒤 Elo 레이팅으로 전체 순위 산출 → **1위**를 결과로
+   - 고른 곳들의 10축 점수를 반응시간 가중 평균해 **사용자 취향 벡터**를 역산
+3. **최종 결과 화면** (1위)
    - CSV 의 `place_name` 원문 그대로 노출
    - 설명은 `summary` / `embedding_text` / `evidence_text_1~5` **7개 필드만으로 재생성**
    - Supabase Storage 의 여행지 이미지 삽입
-   - 10축 점수 막대 + "이래서 골랐어요"(점수 근거) + 재생성 원문 펼쳐보기
+   - 10축 점수 막대(여행지 · 내 응답) + "이래서 골랐어요"(취향 벡터 근거) + 재생성 원문 펼쳐보기
 
 ## 데이터 재생성
 
