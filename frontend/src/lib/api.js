@@ -18,5 +18,6 @@ export const api = {
       body: JSON.stringify({ session_id, winner_id, loser_id, elapsed_ms }),
     }),
   result: (session_id) => req(`/api/result/${session_id}`),
+  cardUrl: (session_id) => `${BASE}/api/result/${session_id}/card.json`,
   health: () => req('/api/health'),
 }
