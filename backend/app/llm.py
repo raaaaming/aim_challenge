@@ -70,7 +70,7 @@ def _extract_json(text: str) -> Optional[dict]:
 
 # ---------------------------------------------------------------------------
 async def _call_gemini(system: str, messages: List[Dict[str, str]], json_mode: bool,
-                       temperature: float) -> str:
+                       temperature: float, max_tokens: int) -> str:
     model = settings.default_model
     url = (
         f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
@@ -83,7 +83,7 @@ async def _call_gemini(system: str, messages: List[Dict[str, str]], json_mode: b
     body: Dict[str, Any] = {
         "contents": contents,
         "systemInstruction": {"parts": [{"text": system}]},
-        "generationConfig": {"temperature": temperature, "maxOutputTokens": 1400},
+        "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens},
     }
     if json_mode:
         body["generationConfig"]["responseMimeType"] = "application/json"
@@ -101,12 +101,12 @@ async def _call_gemini(system: str, messages: List[Dict[str, str]], json_mode: b
 
 
 async def _call_openai_compatible(base: str, system: str, messages: List[Dict[str, str]],
-                                  json_mode: bool, temperature: float) -> str:
+                                  json_mode: bool, temperature: float, max_tokens: int) -> str:
     body: Dict[str, Any] = {
         "model": settings.default_model,
         "messages": [{"role": "system", "content": system}] + messages,
         "temperature": temperature,
-        "max_tokens": 1400,
+        "max_tokens": max_tokens,
     }
     if json_mode:
         body["response_format"] = {"type": "json_object"}
@@ -128,26 +128,28 @@ async def _call_openai_compatible(base: str, system: str, messages: List[Dict[st
 
 
 async def complete(system: str, messages: List[Dict[str, str]], *,
-                   json_mode: bool = False, temperature: float = 0.7) -> str:
+                   json_mode: bool = False, temperature: float = 0.7,
+                   max_tokens: int = 1400) -> str:
     if not settings.llm_enabled:
         raise LLMUnavailable("LLM 키가 설정되지 않았습니다")
     p = settings.LLM_PROVIDER
     if p == "gemini":
-        return await _call_gemini(system, messages, json_mode, temperature)
+        return await _call_gemini(system, messages, json_mode, temperature, max_tokens)
     if p == "groq":
         return await _call_openai_compatible(
             "https://api.groq.com/openai/v1/chat/completions",
-            system, messages, json_mode, temperature)
+            system, messages, json_mode, temperature, max_tokens)
     if p == "openrouter":
         return await _call_openai_compatible(
             "https://openrouter.ai/api/v1/chat/completions",
-            system, messages, json_mode, temperature)
+            system, messages, json_mode, temperature, max_tokens)
     raise LLMUnavailable(f"알 수 없는 provider: {p}")
 
 
 async def complete_json(system: str, messages: List[Dict[str, str]],
-                        temperature: float = 0.4) -> dict:
-    raw = await complete(system, messages, json_mode=True, temperature=temperature)
+                        temperature: float = 0.4, max_tokens: int = 1400) -> dict:
+    raw = await complete(system, messages, json_mode=True, temperature=temperature,
+                         max_tokens=max_tokens)
     obj = _extract_json(raw)
     if obj is None:
         raise LLMUnavailable(f"JSON 파싱 실패: {raw[:200]}")

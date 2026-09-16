@@ -7,9 +7,10 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from . import describe, llm, recommender, repository as repo, tournament
+from . import cards, describe, llm, recommender, repository as repo, tournament
 from . import supabase as sb
 from .config import settings
 
@@ -124,6 +125,19 @@ async def result(session_id: str):
     return await _build_result(m.result, m.result.get("slots", {}))
 
 
+@app.get("/api/result/{session_id}/card.json")
+async def result_card_download(session_id: str):
+    """결과로 나온 여행지 '한 곳'의 빨간 박스 JSON 을 파일로 내려받는다."""
+    m = tournament.get_session(session_id)
+    if m is None or not m.result:
+        raise HTTPException(404, "아직 추천 결과가 없습니다")
+    card = await cards.for_result(m.result["place"])
+    return JSONResponse(
+        card,
+        headers={"Content-Disposition": f'attachment; filename="{card["place_id"]}.json"'},
+    )
+
+
 @app.get("/api/result/preview/{place_id}")
 async def result_preview(place_id: str):
     """세션 없이 특정 여행지 결과 화면을 보고 싶을 때(공유 링크/디버그)."""
@@ -140,6 +154,7 @@ async def result_preview(place_id: str):
 async def _build_result(result: Dict[str, Any], slots: Dict[str, Any]):
     place = result["place"]
     desc = await describe.regenerate(place)
+    card = await cards.for_result(place)   # 결과 1곳 빨간박스 JSON → data/result_card.json
     axmap = repo.axis_map()
     return {
         # 최종 결과 화면 — 이름은 CSV 원문 그대로
@@ -148,6 +163,7 @@ async def _build_result(result: Dict[str, Any], slots: Dict[str, Any]):
         "image_url": place.get("image_url"),
         "image_path": place.get("image_path"),
         "fit_score": result["fit_score"],
+        "card": card,                 # ← 빨간 박스 필수 필드만 담은 그 여행지 1곳
         "description": desc,          # summary/embedding_text/evidence 1~5 로만 재생성
         "source_fields": {            # 재생성 근거 원문 (화면에서 펼쳐 볼 수 있게)
             "summary": place["summary"],

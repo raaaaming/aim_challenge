@@ -189,7 +189,11 @@ export default function ResultScreen({ sessionId, onRestart }) {
         </div>
       )}
 
-      <div className="mt-10 px-5">
+      <div className="mt-10 space-y-2 px-5">
+        <a href={api.cardUrl(sessionId)} download
+           className="block w-full rounded-2xl bg-sea-500/20 py-3.5 text-center text-[14px] font-bold text-sea-100 ring-1 ring-sea-400/30 transition hover:bg-sea-500/30">
+          이 여행지 JSON 내려받기
+        </a>
         <button onClick={onRestart}
                 className="w-full rounded-2xl bg-white/10 py-3.5 text-[14px] font-bold text-white ring-1 ring-white/15 transition hover:bg-white/15">
           처음부터 다시 찾아보기
